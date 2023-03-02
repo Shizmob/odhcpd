@@ -708,6 +708,13 @@ void dhcpv4_handle_msg(void *addr, void *data, size_t len,
 	uint32_t serverid = iface->dhcpv4_local.s_addr;
 	uint32_t fr_serverid = INADDR_ANY;
 
+	bool ipv6_only = false;
+	for (size_t i = 0; i < reqopts_len; i++) {
+		if (reqopts[i] == DHCPV4_OPT_IPV6_ONLY)
+			ipv6_only = true;
+	}
+	ipv6_only = ipv6_only && iface->dhcpv4_ipv6_only;
+
 	if (reqmsg != DHCPV4_MSG_INFORM)
 		a = dhcpv4_lease(iface, reqmsg, req->chaddr, reqaddr,
 				 &leasetime, hostname, hostname_len,
@@ -856,6 +863,11 @@ void dhcpv4_handle_msg(void *addr, void *data, size_t len,
 						4 * iface->dhcpv4_ntp_cnt, iface->dhcpv4_ntp);
 			}
 		}
+	}
+
+	if (ipv6_only) {
+		uint32_t ipv6_timeout = ntohl(0);
+		dhcpv4_put(&reply, &cookie, DHCPV4_OPT_IPV6_ONLY, 4, &ipv6_timeout);
 	}
 
 	dhcpv4_put(&reply, &cookie, DHCPV4_OPT_END, 0, NULL);

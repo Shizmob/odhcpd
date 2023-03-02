@@ -329,6 +329,7 @@ struct interface {
 	struct in_addr *dhcpv4_dns;
 	size_t dhcpv4_dns_cnt;
 	bool dhcpv4_forcereconf;
+	bool dhcpv4_ipv6_only;
 
 	// DNS
 	struct in6_addr *dns;

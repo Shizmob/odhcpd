@@ -61,6 +61,7 @@ enum {
 	IFACE_ATTR_DOMAIN,
 	IFACE_ATTR_FILTER_CLASS,
 	IFACE_ATTR_DHCPV4_FORCERECONF,
+	IFACE_ATTR_DHCPV4_IPV6_ONLY,
 	IFACE_ATTR_DHCPV6_RAW,
 	IFACE_ATTR_DHCPV6_ASSIGNALL,
 	IFACE_ATTR_DHCPV6_PD,
@@ -112,6 +113,7 @@ static const struct blobmsg_policy iface_attrs[IFACE_ATTR_MAX] = {
 	[IFACE_ATTR_DOMAIN] = { .name = "domain", .type = BLOBMSG_TYPE_ARRAY },
 	[IFACE_ATTR_FILTER_CLASS] = { .name = "filter_class", .type = BLOBMSG_TYPE_STRING },
 	[IFACE_ATTR_DHCPV4_FORCERECONF] = { .name = "dhcpv4_forcereconf", .type = BLOBMSG_TYPE_BOOL },
+	[IFACE_ATTR_DHCPV4_IPV6_ONLY] = { .name = "dhcpv4_ipv6_only", .type = BLOBMSG_TYPE_BOOL },
 	[IFACE_ATTR_DHCPV6_RAW] = { .name = "dhcpv6_raw", .type = BLOBMSG_TYPE_STRING },
 	[IFACE_ATTR_DHCPV6_ASSIGNALL] = { .name ="dhcpv6_assignall", .type = BLOBMSG_TYPE_BOOL },
 	[IFACE_ATTR_DHCPV6_PD] = { .name = "dhcpv6_pd", .type = BLOBMSG_TYPE_BOOL },
@@ -210,6 +212,7 @@ static void set_interface_defaults(struct interface *iface)
 	iface->preferred_lifetime = 43200;
 	iface->dhcpv4_start.s_addr = htonl(START_DEFAULT);
 	iface->dhcpv4_end.s_addr = htonl(START_DEFAULT + LIMIT_DEFAULT - 1);
+	iface->dhcpv4_ipv6_only = false;
 	iface->dhcpv6_assignall = true;
 	iface->dhcpv6_pd = true;
 	iface->dhcpv6_na = true;
@@ -822,6 +825,9 @@ int config_parse_interface(void *data, size_t len, const char *name, bool overwr
 
 	if ((c = tb[IFACE_ATTR_DHCPV4_FORCERECONF]))
 		iface->dhcpv4_forcereconf = blobmsg_get_bool(c);
+
+	if ((c = tb[IFACE_ATTR_DHCPV4_IPV6_ONLY]))
+		iface->dhcpv4_ipv6_only = blobmsg_get_bool(c);
 
 	if ((c = tb[IFACE_ATTR_DHCPV6_RAW])) {
 		iface->dhcpv6_raw_len = blobmsg_data_len(c) / 2;
