@@ -621,7 +621,7 @@ void dhcpv4_handle_msg(void *addr, void *data, size_t len,
 
 	syslog(LOG_DEBUG, "Got DHCPv4 request on %s", iface->name);
 
-	if (!iface->dhcpv4_start_ip.s_addr && !iface->dhcpv4_end_ip.s_addr) {
+	if (!iface->dhcpv4_start_ip.s_addr && !iface->dhcpv4_end_ip.s_addr && !iface->dhcpv4_ipv6_only) {
 		syslog(LOG_WARNING, "No DHCP range available on %s", iface->name);
 		return;
 	}
@@ -724,8 +724,27 @@ void dhcpv4_handle_msg(void *addr, void *data, size_t len,
 	if (!a) {
 		if (reqmsg == DHCPV4_MSG_REQUEST)
 			msg = DHCPV4_MSG_NAK;
-		else if (reqmsg == DHCPV4_MSG_DISCOVER)
-			return;
+		else if (reqmsg == DHCPV4_MSG_DISCOVER) {
+			if (!ipv6_only)
+				return;
+
+			/* If we couldn't assign and are on IPv6-only, */
+			/* make a stub binding to 0.0.0.0 as per RFC8925 §3.3 */
+			a = alloc_assignment(0);
+			if (!a) {
+				syslog(LOG_WARNING, "Failed to alloc assignment on interface %s",
+							iface->ifname);
+				return;
+			}
+			memcpy(a->hwaddr, req->chaddr, sizeof(a->hwaddr));
+			a->valid_until = 0;
+			a->iface = iface;
+			a->flags = OAF_DHCPV4 | OAF_STATIC;
+			a->addr = INADDR_ANY;
+
+			leasetime = UINT32_MAX;
+			msg = DHCPV4_MSG_OFFER;
+		}
 	} else if (reqmsg == DHCPV4_MSG_DISCOVER)
 		msg = DHCPV4_MSG_OFFER;
 	else if (reqmsg == DHCPV4_MSG_REQUEST &&
